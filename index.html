@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Disha - Bus Tracking System</title>
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #1e293b;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      /* Navigation */
+      nav {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px 30px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 28px;
+        font-weight: bold;
+        color: white;
+      }
+
+      .logo-icon {
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        padding: 10px;
+        border-radius: 12px;
+        font-size: 24px;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 14px;
+      }
+
+      .btn-primary {
+        background: white;
+        color: #8b5cf6;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+      }
+
+      /* Cards */
+      .card {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      .card h2 {
+        margin-bottom: 16px;
+        color: #1e293b;
+      }
+
+      /* Grid Layout */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 20px;
+      }
+
+      @media (max-width: 968px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Map */
+      #map {
+        height: 600px;
+        border-radius: 20px;
+        z-index: 1;
+      }
+
+      /* Form Inputs */
+      .input-field {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+      }
+
+      .input-field:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+      }
+
+      /* Bus List */
+      .bus-item {
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .bus-item:hover {
+        background: #f1f5f9;
+        transform: translateX(5px);
+      }
+
+      .bus-item.active {
+        background: #ede9fe;
+        border: 2px solid #8b5cf6;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      /* Admin Panel */
+      .admin-panel {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .admin-content {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      /* Tracking Controls */
+      .tracking-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px;
+        background: #fef3c7;
+        border-radius: 12px;
+        margin-bottom: 15px;
+      }
+
+      .pulse {
+        width: 12px;
+        height: 12px;
+        background: #ef4444;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(1.2);
+        }
+      }
+
+      /* Seat Layout */
+      .seat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .seat {
+        aspect-ratio: 1;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .seat:hover {
+        transform: scale(1.1);
+      }
+
+      .seat.available {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .seat.selected {
+        background: #8b5cf6;
+        color: white;
+      }
+
+      .seat.booked {
+        background: #e2e8f0;
+        color: #94a3b8;
+        cursor: not-allowed;
+      }
+
+      /* Tab System */
+      .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      .tab {
+        padding: 12px 24px;
+        background: #f1f5f9;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .tab.active {
+        background: #8b5cf6;
+        color: white;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Loading Spinner */
+      .spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #8b5cf6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Stats */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      /* SOS Button */
+      .sos-button {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+        z-index: 100;
+        transition: all 0.3s ease;
+      }
+
+      .sos-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 15px 40px rgba(239, 68, 68, 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Navigation -->
+      <nav>
+        <div class="logo">
+          <img
+            src="WhatsApp_Image_2025-09-12_at_02.20.57-removebg-preview.png"
+            alt="Disha Logo"
+            style="height: 40px"
+          />
+        </div>
+
+        <div class="nav-buttons">
+          <button class="btn btn-secondary" onclick="showTab('tracking')">
+            Track Buses
+          </button>
+          <button class="btn btn-secondary" onclick="showTab('booking')">
+            Book Tickets
+          </button>
+          <button class="btn btn-secondary" onclick="showTab('profile')">
+            Profile
+          </button>
+          <button class="btn btn-primary" onclick="openAdminPanel()">
+            Admin
+          </button>
+        </div>
+      </nav>
+
+      <!-- Main Content Tabs -->
+      <div id="tracking-tab" class="tab-content active">
+        <div class="grid">
+          <!-- Sidebar -->
+          <div>
+            <div class="card">
+              <h2>🚍 Available Buses</h2>
+              <div id="bus-list"></div>
+            </div>
+
+            <div class="card">
+              <h2>📍 Bus Details</h2>
+              <div id="bus-details">
+                <p style="color: #64748b">Select a bus to view details</p>
+              </div>
+            </div>
+
+            <div
+              class="card"
+              style="
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                color: white;
+              "
+            >
+              <h2 style="color: white">🚨 Emergency SOS</h2>
+              <p style="margin-bottom: 15px; opacity: 0.95">
+                Press for immediate assistance
+              </p>
+              <button
+                class="btn"
+                style="width: 100%; background: white; color: #ef4444"
+                onclick="triggerSOS()"
+              >
+                📞 Call Emergency
+              </button>
+              <p style="font-size: 12px; margin-top: 10px; opacity: 0.9">
+                Hotline: 100
+              </p>
+            </div>
+          </div>
+
+          <!-- Map -->
+          <div>
+            <div class="card" style="padding: 0; overflow: hidden">
+              <div id="map"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking Tab -->
+      <div id="booking-tab" class="tab-content">
+        <div class="grid">
+          <div>
+            <div class="card">
+              <h2>🎫 Book Ticket</h2>
+              <input
+                type="text"
+                class="input-field"
+                id="from"
+                placeholder="From"
+              />
+              <input type="text" class="input-field" id="to" placeholder="To" />
+              <input type="date" class="input-field" id="date" />
+              <select class="input-field" id="passenger-type">
+                <option value="regular">Regular</option>
+                <option value="child">Child (50% off)</option>
+                <option value="senior">Senior Citizen (30% off)</option>
+                <option value="women">Women (10% off)</option>
+                <option value="govt">Govt Employee (20% off)</option>
+              </select>
+              <button
+                class="btn btn-primary"
+                style="width: 100%"
+                onclick="proceedToSeats()"
+              >
+                Continue to Seat Selection
+              </button>
+            </div>
+
+            <div class="card">
+              <h2>🎁 Loyalty Rewards</h2>
+              <p style="margin-bottom: 10px">
+                Progress: <strong>12/20</strong> bookings
+              </p>
+              <div
+                style="
+                  height: 8px;
+                  background: #e2e8f0;
+                  border-radius: 10px;
+                  overflow: hidden;
+                "
+              >
+                <div
+                  style="
+                    width: 60%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+                  "
+                ></div>
+              </div>
+              <p style="margin-top: 10px; font-size: 14px; color: #64748b">
+                8 more trips for a FREE ride!
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <h2>🪑 Select Seats</h2>
+              <div
+                style="
+                  background: #1e293b;
+                  color: white;
+                  text-align: center;
+                  padding: 10px;
+                  border-radius: 12px;
+                  margin-bottom: 20px;
+                "
+              >
+                🚌 Driver
+              </div>
+              <div class="seat-grid" id="seat-grid"></div>
+              <div
+                style="
+                  display: flex;
+                  gap: 15px;
+                  margin-top: 20px;
+                  flex-wrap: wrap;
+                "
+              >
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div
+                    class="seat available"
+                    style="width: 30px; height: 30px"
+                  ></div>
+                  <span>Available</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div
+                    class="seat selected"
+                    style="width: 30px; height: 30px"
+                  ></div>
+                  <span>Selected</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div
+                    class="seat booked"
+                    style="width: 30px; height: 30px"
+                  ></div>
+                  <span>Booked</span>
+                </div>
+              </div>
+              <div
+                style="
+                  margin-top: 20px;
+                  padding: 15px;
+                  background: #f1f5f9;
+                  border-radius: 12px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                  "
+                >
+                  <span>Selected Seats:</span>
+                  <strong id="selected-seats-display">None</strong>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #8b5cf6;
+                  "
+                >
+                  <span>Total:</span>
+                  <span id="total-price">₹0</span>
+                </div>
+              </div>
+              <button
+                class="btn btn-success"
+                style="width: 100%; margin-top: 15px"
+                onclick="confirmBooking()"
+              >
+                Proceed to Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Tab -->
+      <div id="profile-tab" class="tab-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">18</div>
+            <div class="stat-label">Total Bookings</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">2</div>
+            <div class="stat-label">Upcoming Trips</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">180</div>
+            <div class="stat-label">Reward Points</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">₹450</div>
+            <div class="stat-label">Saved Money</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📋 Recent Bookings</h2>
+          <div class="bus-item">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              "
+            >
+              <div>
+                <strong>MIT to Pune Station</strong>
+                <div style="font-size: 14px; color: #64748b">Oct 15, 2025</div>
+              </div>
+              <div>
+                <span class="badge badge-success">Upcoming</span>
+                <div style="font-weight: bold; color: #8b5cf6; margin-top: 5px">
+                  ₹100
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bus-item">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              "
+            >
+              <div>
+                <strong>MIT to Hadapsar</strong>
+                <div style="font-size: 14px; color: #64748b">Oct 10, 2025</div>
+              </div>
+              <div>
+                <span class="badge badge-warning">Completed</span>
+                <div style="font-weight: bold; color: #8b5cf6; margin-top: 5px">
+                  ₹80
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOS Floating Button -->
+    <button class="sos-button" onclick="triggerSOS()">🚨</button>
+
+    <!-- Admin Panel Modal -->
+    <div id="admin-panel" class="admin-panel">
+      <div class="admin-content">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+          "
+        >
+          <h2>🔐 Admin Panel</h2>
+          <button class="btn btn-danger" onclick="closeAdminPanel()">
+            Close
+          </button>
+        </div>
+
+        <div id="admin-login">
+          <input
+            type="password"
+            class="input-field"
+            id="admin-password"
+            placeholder="Enter Admin Password"
+          />
+          <button
+            class="btn btn-primary"
+            style="width: 100%"
+            onclick="adminLogin()"
+          >
+            Login
+          </button>
+        </div>
+
+        <div id="admin-content" class="hidden">
+          <div class="tabs">
+            <div class="tab active" onclick="switchAdminTab('bus-control')">
+              Bus Control
+            </div>
+            <div class="tab" onclick="switchAdminTab('add-bus')">Add Bus</div>
+            <div class="tab" onclick="switchAdminTab('manage-routes')">
+              Routes
+            </div>
+          </div>
+
+          <!-- Bus Control Tab -->
+          <div id="bus-control" class="tab-content active">
+            <div class="tracking-status">
+              <div class="pulse"></div>
+              <div>
+                <strong>Your Phone is Acting as Bus</strong>
+                <div style="font-size: 12px; opacity: 0.8" id="tracking-coords">
+                  Waiting for location...
+                </div>
+              </div>
+            </div>
+            <button
+              class="btn btn-success"
+              style="width: 100%; margin-bottom: 10px"
+              onclick="startTracking()"
+            >
+              📍 Start Tracking This Device
+            </button>
+            <button
+              class="btn btn-danger"
+              style="width: 100%"
+              onclick="stopTracking()"
+            >
+              ⏹️ Stop Tracking
+            </button>
+            <div style="margin-top: 20px">
+              <label
+                style="font-weight: 600; margin-bottom: 8px; display: block"
+                >Assign to Bus:</label
+              >
+              <select class="input-field" id="track-bus-select">
+                <option value="bus1">Bus 1 - Route A</option>
+                <option value="bus2">Bus 2 - Route B</option>
+                <option value="bus3">Bus 3 - Route C</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Add Bus Tab -->
+          <div id="add-bus" class="tab-content">
+            <input
+              type="text"
+              class="input-field"
+              id="new-bus-name"
+              placeholder="Bus Name (e.g., Bus 4)"
+            />
+            <input
+              type="text"
+              class="input-field"
+              id="new-bus-route"
+              placeholder="Route (e.g., Route D)"
+            />
+            <input
+              type="text"
+              class="input-field"
+              id="new-bus-driver"
+              placeholder="Driver Name"
+            />
+            <input
+              type="tel"
+              class="input-field"
+              id="new-bus-phone"
+              placeholder="Driver Phone"
+            />
+            <input
+              type="number"
+              class="input-field"
+              id="new-bus-seats"
+              placeholder="Total Seats"
+              value="40"
+            />
+            <button
+              class="btn btn-success"
+              style="width: 100%"
+              onclick="addNewBus()"
+            >
+              Add Bus
+            </button>
+          </div>
+
+          <!-- Routes Tab -->
+          <div id="manage-routes" class="tab-content">
+            <h3>Existing Routes</h3>
+            <div id="routes-list"></div>
+            <button
+              class="btn btn-primary"
+              style="width: 100%; margin-top: 15px"
+              onclick="refreshData()"
+            >
+              🔄 Refresh Data
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        set,
+        onValue,
+        update,
+      } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+      // Firebase configuration - REPLACE WITH YOUR CONFIG
+      const firebaseConfig = {
+        apiKey: "AIzaSyDEMO_KEY_REPLACE_THIS",
+        authDomain: "your-project.firebaseapp.com",
+        databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+        projectId: "your-project",
+        storageBucket: "your-project.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abc123",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+
+      // Make database accessible globally
+      window.firebaseDb = database;
+      window.firebaseRef = ref;
+      window.firebaseSet = set;
+      window.firebaseOnValue = onValue;
+      window.firebaseUpdate = update;
+    </script>
+
+    <script>
+      // Global Variables
+      let map;
+      let markers = {};
+      let selectedBus = null;
+      let trackingWatchId = null;
+      let selectedSeats = [];
+      const basePrice = 100;
+
+      // Demo Data
+      let busData = {
+        bus1: {
+          id: "bus1",
+          name: "Bus 1",
+          route: "Route A - MIT to Pune Station",
+          driver: "Rajesh Kumar",
+          phone: "+91 98765 43210",
+          position: { lat: 18.5204, lng: 73.8567 },
+          speed: 45,
+          seats: { available: 12, total: 40 },
+          status: "active",
+        },
+        bus2: {
+          id: "bus2",
+          name: "Bus 2",
+          route: "Route B - MIT to Hadapsar",
+          driver: "Suresh Patil",
+          phone: "+91 98765 43211",
+          position: { lat: 18.5304, lng: 73.8667 },
+          speed: 38,
+          seats: { available: 5, total: 40 },
+          status: "active",
+        },
+        bus3: {
+          id: "bus3",
+          name: "Bus 3",
+          route: "Route C - MIT to Katraj",
+          driver: "Amit Deshmukh",
+          phone: "+91 98765 43212",
+          position: { lat: 18.5104, lng: 73.8467 },
+          speed: 52,
+          seats: { available: 20, total: 40 },
+          status: "active",
+        },
+      };
+
+      // Initialize Map
+      function initMap() {
+        map = L.map("map").setView([18.5204, 73.8567], 13);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+        }).addTo(map);
+
+        // Add bus markers
+        updateBusMarkers();
+      }
+
+      // Update Bus Markers on Map
+      function updateBusMarkers() {
+        Object.values(busData).forEach((bus) => {
+          if (markers[bus.id]) {
+            markers[bus.id].setLatLng([bus.position.lat, bus.position.lng]);
+          } else {
+            const busIcon = L.divIcon({
+              className: "custom-div-icon",
+              html: `<div style="background: #8b5cf6; color: white; padding: 8px 12px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">🚌 ${bus.name}</div>`,
+              iconSize: [80, 40],
+              iconAnchor: [40, 20],
+            });
+
+            markers[bus.id] = L.marker([bus.position.lat, bus.position.lng], {
+              icon: busIcon,
+            }).addTo(map).bindPopup(`
+                            <strong>${bus.name}</strong><br>
+                            ${bus.route}<br>
+                            Speed: ${bus.speed} km/h<br>
+                            Available Seats: ${bus.seats.available}
+                        `);
+          }
+        });
+      }
+
+      // Render Bus List
+      function renderBusList() {
+        const busList = document.getElementById("bus-list");
+        busList.innerHTML = "";
+
+        Object.values(busData).forEach((bus) => {
+          const busItem = document.createElement("div");
+          busItem.className =
+            "bus-item" + (selectedBus === bus.id ? " active" : "");
+          busItem.onclick = () => selectBus(bus.id);
+          busItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <strong>${bus.name}</strong>
+                        <span class="badge badge-success">${bus.status}</span>
+                    </div>
+                    <div style="font-size: 14px; color: #64748b;">${bus.route}</div>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                        ${bus.seats.available} seats • ${bus.speed} km/h
+                    </div>
+                `;
+          busList.appendChild(busItem);
+        });
+      }
+
+      // Select Bus
+      function selectBus(busId) {
+        selectedBus = busId;
+        renderBusList();
+
+        const bus = busData[busId];
+        document.getElementById("bus-details").innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #8b5cf6; font-size: 18px;">${bus.name}</strong>
+                    <div style="color: #64748b; margin-top: 5px;">${bus.route}</div>
+                </div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="font-size: 14px; margin-bottom: 8px;">
+                        <strong>Driver:</strong> ${bus.driver}
+                    </div>
+                    <div style="font-size: 14px; margin-bottom: 8px;">
+                        <strong>Phone:</strong> ${bus.phone}
+                    </div>
+                    <div style="font-size: 14px; margin-bottom: 8px;">
+                        <strong>Speed:</strong> ${bus.speed} km/h
+                    </div>
+                    <div style="font-size: 14px;">
+                        <strong>Available Seats:</strong> ${bus.seats.available}/${bus.seats.total}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" style="flex: 1;" onclick="map.setView([${bus.position.lat}, ${bus.position.lng}], 15)">
+                        📍 Locate
+                    </button>
+                    <button class="btn btn-success" style="flex: 1;" onclick="showTab('booking')">
+                        🎫 Book
+                    </button>
+                </div>
+            `;
+
+        map.setView([bus.position.lat, bus.position.lng], 15);
+        markers[busId].openPopup();
+      }
+
+      // Initialize Seat Grid
+      function initSeats() {
+        const seatGrid = document.getElementById("seat-grid");
+        seatGrid.innerHTML = "";
+        const bookedSeats = [2, 5, 12, 15, 23, 27, 34];
+
+        for (let i = 1; i <= 40; i++) {
+          const seat = document.createElement("div");
+          const isBooked = bookedSeats.includes(i);
+          seat.className = "seat " + (isBooked ? "booked" : "available");
+          seat.textContent = i;
+
+          if (!isBooked) {
+            seat.onclick = () => toggleSeat(i, seat);
+          }
+
+          seatGrid.appendChild(seat);
+        }
+      }
+
+      // Toggle Seat Selection
+      function toggleSeat(seatNum, element) {
+        if (selectedSeats.includes(seatNum)) {
+          selectedSeats = selectedSeats.filter((s) => s !== seatNum);
+          element.className = "seat available";
+        } else {
+          selectedSeats.push(seatNum);
+          element.className = "seat selected";
+        }
+        updateBookingSummary();
+      }
+
+      // Update Booking Summary
+      function updateBookingSummary() {
+        document.getElementById("selected-seats-display").textContent =
+          selectedSeats.length > 0 ? selectedSeats.join(", ") : "None";
+
+        const passengerType = document.getElementById("passenger-type").value;
+        const discounts = {
+          regular: 1,
+          child: 0.5,
+          senior: 0.7,
+          women: 0.9,
+          govt: 0.8,
+        };
+
+        const total =
+          selectedSeats.length * basePrice * discounts[passengerType];
+        document.getElementById("total-price").textContent = "₹" + total;
+      }
+
+      // Real-time Phone Tracking
+      function startTracking() {
+        if (!navigator.geolocation) {
+          alert("Geolocation is not supported by your browser");
+          return;
+        }
+
+        const busId = document.getElementById("track-bus-select").value;
+
+        trackingWatchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            // Update local data
+            busData[busId].position = { lat, lng };
+
+            // Update Firebase (if configured)
+            if (window.firebaseDb) {
+              const busRef = window.firebaseRef(
+                window.firebaseDb,
+                "buses/" + busId
+              );
+              window.firebaseUpdate(busRef, {
+                position: { lat, lng },
+                lastUpdate: new Date().toISOString(),
+              });
+            }
+
+            // Update UI
+            updateBusMarkers();
+            document.getElementById(
+              "tracking-coords"
+            ).textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+
+            alert(
+              `✅ Tracking started! Your phone is now ${busData[busId].name}`
+            );
+          },
+          (error) => {
+            console.error("Error:", error);
+            alert("Error getting location: " + error.message);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 5000,
+          }
+        );
+      }
+
+      // Stop Tracking
+      function stopTracking() {
+        if (trackingWatchId) {
+          navigator.geolocation.clearWatch(trackingWatchId);
+          trackingWatchId = null;
+          alert("📍 Tracking stopped");
+        }
+      }
+
+      // Admin Functions
+      function openAdminPanel() {
+        document.getElementById("admin-panel").style.display = "flex";
+      }
+
+      function closeAdminPanel() {
+        document.getElementById("admin-panel").style.display = "none";
+      }
+
+      function adminLogin() {
+        const password = document.getElementById("admin-password").value;
+        if (password === "4321") {
+          document.getElementById("admin-login").classList.add("hidden");
+          document.getElementById("admin-content").classList.remove("hidden");
+          renderRoutesAdmin();
+        } else {
+          alert("❌ Incorrect password!");
+        }
+      }
+
+      function switchAdminTab(tabId) {
+        document.querySelectorAll("#admin-content .tab").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document
+          .querySelectorAll("#admin-content .tab-content")
+          .forEach((content) => {
+            content.classList.remove("active");
+          });
+
+        event.target.classList.add("active");
+        document.getElementById(tabId).classList.add("active");
+      }
+
+      function addNewBus() {
+        const name = document.getElementById("new-bus-name").value;
+        const route = document.getElementById("new-bus-route").value;
+        const driver = document.getElementById("new-bus-driver").value;
+        const phone = document.getElementById("new-bus-phone").value;
+        const seats = document.getElementById("new-bus-seats").value;
+
+        if (!name || !route || !driver) {
+          alert("Please fill all required fields");
+          return;
+        }
+
+        const busId = "bus" + (Object.keys(busData).length + 1);
+        busData[busId] = {
+          id: busId,
+          name,
+          route,
+          driver,
+          phone,
+          position: { lat: 18.5204, lng: 73.8567 },
+          speed: 0,
+          seats: { available: parseInt(seats), total: parseInt(seats) },
+          status: "active",
+        };
+
+        renderBusList();
+        updateBusMarkers();
+        renderRoutesAdmin();
+        alert("✅ Bus added successfully!");
+
+        // Clear form
+        document.getElementById("new-bus-name").value = "";
+        document.getElementById("new-bus-route").value = "";
+        document.getElementById("new-bus-driver").value = "";
+        document.getElementById("new-bus-phone").value = "";
+      }
+
+      function renderRoutesAdmin() {
+        const routesList = document.getElementById("routes-list");
+        routesList.innerHTML = "";
+
+        Object.values(busData).forEach((bus) => {
+          const routeItem = document.createElement("div");
+          routeItem.className = "bus-item";
+          routeItem.innerHTML = `
+                    <strong>${bus.name}</strong> - ${bus.route}<br>
+                    <small>Driver: ${bus.driver}</small>
+                `;
+          routesList.appendChild(routeItem);
+        });
+      }
+
+      function refreshData() {
+        renderBusList();
+        updateBusMarkers();
+        renderRoutesAdmin();
+        alert("🔄 Data refreshed!");
+      }
+
+      // Other Functions
+      function showTab(tabName) {
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.getElementById(tabName + "-tab").classList.add("active");
+      }
+
+      function proceedToSeats() {
+        const from = document.getElementById("from").value;
+        const to = document.getElementById("to").value;
+        const date = document.getElementById("date").value;
+
+        if (!from || !to || !date) {
+          alert("Please fill all booking details");
+          return;
+        }
+
+        alert("✅ Proceeding to seat selection");
+      }
+
+      function confirmBooking() {
+        if (selectedSeats.length === 0) {
+          alert("Please select at least one seat");
+          return;
+        }
+
+        alert(
+          `✅ Booking confirmed!\nSeats: ${selectedSeats.join(", ")}\nTotal: ${
+            document.getElementById("total-price").textContent
+          }`
+        );
+      }
+
+      function triggerSOS() {
+        if (confirm("🚨 Are you sure you want to trigger emergency SOS?")) {
+          alert(
+            "🚨 EMERGENCY ALERT SENT!\n\n✅ Authorities notified\n✅ Driver notified\n✅ Emergency contacts notified\n\nHelp is on the way!\n\nEmergency Hotline: 100"
+          );
+        }
+      }
+
+      // Initialize on page load
+      window.onload = function () {
+        initMap();
+        renderBusList();
+        initSeats();
+
+        // Set default date to today
+        document.getElementById("date").valueAsDate = new Date();
+
+        // Listen for passenger type changes
+        document
+          .getElementById("passenger-type")
+          .addEventListener("change", updateBookingSummary);
+      };
+    </script>
+  </body>
+</html>
